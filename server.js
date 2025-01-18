@@ -17,7 +17,15 @@ const userSchema = new mongoose.Schema({
   warnings: { type: Number, default: 0 },
 });
 
+const banSchema = new mongoose.Schema({
+    userId: { type: String, required: true },
+    username: { type: String },
+    bannedAt: { type: Date, default: Date.now },
+  });
+
 const User = mongoose.model('User', userSchema);
+const Ban = mongoose.model("Ban", banSchema);
+
 
 // Create a new bot instance
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -58,10 +66,19 @@ bot.on('message', async (ctx) => {
       await user.save();
 
       if (user.warnings < 3) {
+
+        // Delete the offending message
+        await ctx.deleteMessage();
+
         await ctx.reply(
           `@${username}, this is warning #${user.warnings} for sharing a Solana contract address. On the third warning, you will be removed from the group.`
         );
       } else {
+
+        // Save the banned user to the Ban collection
+        const ban = new Ban({ userId, username });
+        await ban.save();
+
         // Ban or remove the user from the group
         await ctx.reply(`@${username} has been removed from the group for repeated violations.`);
         await ctx.banChatMember(userId);
@@ -74,6 +91,25 @@ bot.on('message', async (ctx) => {
     console.error('Error handling message:', err);
   }
 });
+
+
+// Middleware to monitor new members joining
+bot.on("chat_member", async (ctx) => {
+    try {
+      const member = ctx.chatMember;
+      const userId = member.user.id.toString();
+  
+      // Check if the user is in the Ban collection
+      const bannedUser = await Ban.findOne({ userId });
+      if (bannedUser) {
+        // Kick the banned user
+        await ctx.banChatMember(userId);
+        console.log(`Banned user @${bannedUser.username} tried to join and was kicked.`);
+      }
+    } catch (err) {
+      console.error("Error handling new member:", err);
+    }
+  });
 
 // Start the bot
 bot.launch().then(() => {
