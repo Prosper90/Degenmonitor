@@ -98,18 +98,49 @@ bot.on("chat_member", async (ctx) => {
     try {
       const member = ctx.chatMember;
       const userId = member.user.id.toString();
-  
-      // Check if the user is in the Ban collection
-      const bannedUser = await Ban.findOne({ userId });
-      if (bannedUser) {
+      const username = member.user.username || member.user.first_name;
+
+        if (bannedUser) {
+        // Notify admins about the banned user's attempt to join
+        await ctx.telegram.sendMessage(
+            ctx.chat.id,
+            `User @${username} (ID: ${userId}) is banned and tried to join the group. They cannot be added back unless removed from the ban list by an admin.`
+        );
+
         // Kick the banned user
         await ctx.banChatMember(userId);
-        console.log(`Banned user @${bannedUser.username} tried to join and was kicked.`);
-      }
+
+        console.log(`Banned user @${username} (ID: ${userId}) tried to join and was kicked.`);
+        }
     } catch (err) {
       console.error("Error handling new member:", err);
     }
   });
+
+
+
+   // Command to unban a user
+   bot.command("unban", async (ctx) => {
+        try {
+        const args = ctx.message.text.split(" ");
+        if (args.length < 2) {
+            return ctx.reply("Usage: /unban <user_id>");
+        }
+    
+        const userId = args[1];
+        const result = await Ban.deleteOne({ userId });
+    
+        if (result.deletedCount > 0) {
+            ctx.reply(`User with ID ${userId} has been unbanned.`);
+        } else {
+            ctx.reply(`No banned user found with ID ${userId}.`);
+        }
+        } catch (err) {
+        console.error("Error unbanning user:", err);
+        ctx.reply("An error occurred while trying to unban the user.");
+        }
+    });
+
 
 // Start the bot
 bot.launch().then(() => {
