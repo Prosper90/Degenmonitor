@@ -65,10 +65,10 @@ bot.on('message', async (ctx) => {
       user.warnings += 1;
       await user.save();
 
-      if (user.warnings < 3) {
+      // Delete the offending message
+      await ctx.deleteMessage();
 
-        // Delete the offending message
-        await ctx.deleteMessage();
+      if (user.warnings < 3) {
 
         await ctx.reply(
           `@${username}, this is warning #${user.warnings} for sharing a Solana contract address. On the third warning, you will be removed from the group.`
