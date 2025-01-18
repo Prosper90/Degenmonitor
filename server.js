@@ -82,3 +82,13 @@ bot.launch().then(() => {
 // Handle graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+// Dummy HTTP server to prevent Heroku from crashing
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.get("/", (req, res) => {
+  res.send("Bot is running...");
+});
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
