@@ -63,7 +63,7 @@ bot.on('message', async (ctx) => {
       } else {
         // Ban or remove the user from the group
         await ctx.reply(`@${username} has been removed from the group for repeated violations.`);
-        await ctx.kickChatMember(userId);
+        await ctx.banChatMember(userId);
 
         // Optionally delete the user from the database
         await User.deleteOne({ userId });
